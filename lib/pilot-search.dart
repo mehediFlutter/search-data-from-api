@@ -12,11 +12,13 @@ class PilotSearch extends StatefulWidget {
 }
 
 class _PilotSearchState extends State<PilotSearch> {
-  int i = 0;
+  String searchValue = ''; // Define the search term variable
 
   static List allproducts = [];
   static List newProducts = [];
-  void getProduct() async {
+
+  // ... (rest of your existing code)
+    void getProduct() async {
     Response response =
         await get(Uri.parse("https://pilotbazar.com/api/vehicle?page=1"));
     //https://pilotbazar.com/api/vehicle?page=0
@@ -25,7 +27,7 @@ class _PilotSearchState extends State<PilotSearch> {
     final Map<String, dynamic> decodedResponse = jsonDecode(response.body);
 
     print(decodedResponse['data']);
-    for (i; i < decodedResponse['data'].length; i++) {
+    for (int i = 0; i < decodedResponse['data'].length; i++) {
       allproducts.add(Product(
         vehicleName: decodedResponse['data'][i]['translate'][0]['title'] ?? '',
         manufacture: decodedResponse['data'][i]['manufacture'] ?? '',
@@ -50,7 +52,6 @@ class _PilotSearchState extends State<PilotSearch> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     getProduct();
     updateList('');
@@ -58,9 +59,10 @@ class _PilotSearchState extends State<PilotSearch> {
 
   void updateList(String val) {
     setState(() {
+      searchValue = val; // Update the search term variable
+
       if (val.isEmpty) {
         newProducts = List.from(allproducts);
-        setState(() {});
       } else {
         List<String> searchTerms = val.toLowerCase().split(' ');
 
@@ -76,29 +78,28 @@ class _PilotSearchState extends State<PilotSearch> {
   }
 
   Widget build(BuildContext context) {
+    List<Product> displayProducts =
+        searchValue.isEmpty ? List.from(allproducts) : List.from(newProducts);
+
     return Scaffold(
       appBar: AppBar(
         title: Text("Search PilotBazar"),
       ),
       body: Column(
         children: [
-          Expanded(
-            flex: 1,
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: TextField(
-                onChanged: (value) {
-                  // _searchList(value);
-                  updateList(value);
-                },
-                decoration: InputDecoration(
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  hintText: "Search",
-                  prefixIcon: Icon(Icons.search),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: TextField(
+              onChanged: (value) {
+                updateList(value);
+              },
+              decoration: InputDecoration(
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
+                hintText: "Search",
+                prefixIcon: Icon(Icons.search),
               ),
             ),
           ),
@@ -107,41 +108,40 @@ class _PilotSearchState extends State<PilotSearch> {
             child: Padding(
               padding: const EdgeInsets.all(10),
               child: ListView.builder(
-                  itemCount: newProducts.length,
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () {
-                        //getProduct();
-
-                        print("Tapped the listile");
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => DetailsVehicle(
-                                      VehicleName: newProducts[index]
-                                          .vehicleName
-                                          .toString(),
-                                      VehiceId:
-                                          newProducts[index].id.toString(),
-                                      imageName: newProducts[index]
-                                          .imageName
-                                          .toString(),
-                                    )));
-                      },
-                      child: Card(
-                        child: ListTile(
-                          title: Image.network(
-                              "https://pilotbazar.com/storage/vehicles/${newProducts[index].imageName}"),
-                          subtitle: Column(
-                            children: [
-                              Text(newProducts[index].id.toString()),
-                              Text(newProducts[index].vehicleName.toString()),
-                            ],
+                itemCount: displayProducts.length,
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      print("Tapped the listile");
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetailsVehicle(
+                            VehicleName: displayProducts[index].vehicleName,
+                            VehiceId: displayProducts[index].id.toString(),
+                            imageName: displayProducts[index].imageName,
                           ),
                         ),
+                      );
+                    },
+                    child: Card(
+                      child: ListTile(
+                        title: Image.network(
+                          "https://pilotbazar.com/storage/vehicles/${displayProducts[index].imageName}",
+                        ),
+                        subtitle: Column(
+                          children: [
+                            Text(displayProducts[index].id.toString()),
+                            Text(displayProducts[index].vehicleName.toString()),
+                          ],
+                          
+                        ),
+                        trailing: IconButton(onPressed: (){}, icon: Icon(Icons.share)),
                       ),
-                    );
-                  }),
+                    ),
+                  );
+                },
+              ),
             ),
           )
         ],
